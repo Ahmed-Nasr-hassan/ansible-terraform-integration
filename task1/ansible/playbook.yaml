@@ -1,0 +1,37 @@
+- name: config nginx machines
+  hosts: nginx
+  become: true
+  tasks:
+    - name: update packages
+      apt:
+        update_cache: yes
+    
+    - name: install nginx
+      apt:
+        name: nginx
+        state: present
+           
+    - name: copy index.html file to remote machines
+      copy:
+        src: ./index.html
+        dest: /var/www/html
+  
+    - name: Check if default listener present
+      lineinfile:
+        path: /etc/nginx/sites-enabled/default 
+        regexp: '^\s*listen\s+80\s+default_server;'
+        state: absent
+      check_mode: true
+      changed_when: false
+      register: check
+
+    - name: Add the line if default listener not changed
+      lineinfile:
+        path: /etc/nginx/sites-enabled/default 
+        regexp: '^\s*listen\s+80\s+default_server;'
+        line: '    listen 8090 default_server;'
+      when: check.found == true
+    
+    - name: restart nginx
+      command: systemctl restart nginx
+                
