@@ -13,7 +13,7 @@
     - copy index.html from local to /var/www/html
     - restart nginx service
 
-## tash 2
+## task 2
 
 1. terraform
     - create infrastructure
