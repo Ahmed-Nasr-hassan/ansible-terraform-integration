@@ -1,0 +1,2 @@
+[web-django]
+web-machine-1 ansible_host=54.144.81.168 ansible_user=ubuntu

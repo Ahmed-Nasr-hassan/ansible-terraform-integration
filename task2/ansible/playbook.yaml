@@ -1,0 +1,73 @@
+- name: config web machines
+  hosts: web-django
+  become: true
+  tasks:
+    - name: update packages
+      apt:
+        update_cache: yes
+
+    - name: install python3 pip
+      apt:
+        name: python3-pip
+        state: present 
+
+    - name: clone repo
+      git:
+        repo: https://github.com/Ahmed-Nasr-hassan/fundme-django
+        dest: /home/ubuntu/fundme-django
+    
+    - name: install requirements
+      command: pip install -r /home/ubuntu/fundme-django/fundme/requirements.txt
+
+    - name: Get the public IP address
+      command: bash -c "curl -s http://169.254.169.254/latest/meta-data/public-ipv4"
+      register: public_ip
+
+    - name: add current public ip to allowed hosts
+      lineinfile: 
+        path: /home/ubuntu/fundme-django/fundme/fundme/settings.py
+        regexp: "^ALLOWED_HOSTS"
+        line: "ALLOWED_HOSTS=[\"{{ public_ip.stdout }}\"]"
+
+    - name: Collect static files
+      command:
+        chdir: /home/ubuntu/fundme-django/fundme 
+        cmd: python3 manage.py collectstatic --noinput
+        
+    - name: makemigrations
+      command: python3 manage.py makemigrations --noinput
+      args:
+        chdir: /home/ubuntu/fundme-django/fundme
+
+    - name: migrate
+      command: python3 manage.py migrate --noinput
+      args:
+        chdir: /home/ubuntu/fundme-django/fundme
+
+    - name: runserver
+      shell: cd /home/ubuntu/fundme-django/fundme; python3 manage.py runserver 0.0.0.0:8000 &
+   
+   
+    # - name: cd to manage.py folder
+    #   command: cd /home/ubuntu/fundme-django/fundme
+
+    # - name: install requirements file
+    #   pip:
+    #     requirements: /home/ubuntu/fundme-django/fundme/requirements.txt
+
+    # - name: makemigrations
+    #   community.general.django_manage:
+    #     project_path: "/home/ubuntu/fundme-django/fundme"
+    #     command: makemigrations
+
+    # - name: collectstatic
+    #   community.general.django_manage:
+    #     project_path: "/home/ubuntu/fundme-django/fundme"
+    #     command: migrate
+
+
+
+    # - name: collectstatic
+    #   community.general.django_manage:
+    #     project_path: "/home/ubuntu/fundme-django/fundme"
+    #     command: runserver 0.0.0.0:8000
